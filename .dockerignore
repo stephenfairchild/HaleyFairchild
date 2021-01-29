@@ -1,0 +1,5 @@
+api/vendor/
+api/public/vendor/
+api/config/development.config.php
+api/config/autoload/local.php
+api/config/autoload/*.local.php
