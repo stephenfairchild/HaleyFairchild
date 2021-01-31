@@ -1,0 +1,234 @@
+.DEFAULT_GOAL := build-all
+
+BIN      := ./vendor/bin
+BUILD    := ./build
+COMPOSER := composer.phar
+DKR      := ./docker/docker.sh
+GIT      := git
+PHP      := php
+TOOLS    := ./tools
+YARN     := yarn
+ZF       := php ./public/index.php
+
+SITES := aje acs npgle
+
+APPLICATION_ENV ?= docker
+
+ifeq ($(APPLICATION_ENV),docker)
+	IS_DEV := 1
+endif
+
+ifeq ($(APPLICATION_ENV),development)
+	IS_DEV := 1
+endif
+
+ifdef IS_DEV
+	COMPOSER_ARGS     := --no-plugins
+	COMPOSER_DEV_MODE := dev-on
+else
+	COMPOSER_ARGS     := --no-plugins -o --no-dev
+	COMPOSER_DEV_MODE := dev-off
+endif
+
+PHPCS_FIX_ARGS       := fix --allow-risky=yes --config=config/php-cs-fixer.php
+PHPCS_FIX_TYPES_ARGS := fix --allow-risky=yes --config=config/php-cs-fixer-strict-types-only.php
+
+# Configuration file sources:
+CONFIG_DIST_DIR := config/autoload/dist
+CONFIG_DIST     := $(wildcard $(CONFIG_DIST_DIR)/*.php.dist*-$(APPLICATION_ENV))
+
+# Configuration file destinations:
+CONFIG_DIR := config/autoload
+CONFIG     := $(patsubst $(CONFIG_DIST_DIR)/%-$(APPLICATION_ENV),$(CONFIG_DIR)/%,$(subst .php.dist,.php,$(CONFIG_DIST)))
+
+# Configuration file replacements:
+CONFIG_VARS := ARES_USER=$(ARES_USER)
+CONFIG_VARS += HOSTNAME=$(RESEARCHER_MYSQL_HOSTNAME)
+CONFIG_VARS += PASSWORD=$(RESEARCHER_MYSQL_PASSWORD)
+CONFIG_VARS += USERNAME=$(RESEARCHER_MYSQL_USERNAME)
+CONFIG_VARS += VERSION=$(shell date +%Y-%m-%d-%H-%M-%S)-$(shell $(GIT) rev-parse --short HEAD)
+
+.PHONY: build
+build: #! Build the site
+build: config permissions vendor proxies protobuf translations build-assets
+
+.PHONY: build-all
+build-all: #! Build the site for development (default)
+build-all: build db-migrate clean-cache
+
+.PHONY: build-assets
+build-assets: #! Build assets
+build-assets: node_modules
+	APPLICATION_ENV=$(APPLICATION_ENV) $(YARN) build
+
+.PHONY: clean
+clean: #! Clean most uncommitted files (dangerous)
+	$(GIT) checkout -- .
+	$(GIT) clean -d -f -x --exclude=/config --exclude=/node_modules --exclude=/vendor
+
+.PHONY: clean-all
+clean-all: #! Clean all uncommitted files (dangerous)
+clean-all:
+	$(GIT) checkout -- .
+	$(GIT) clean -d -f -x
+
+.PHONY: clean-cache
+clean-cache: #! Clean the cache
+clean-cache: config vendor
+	$(ZF) orm:clear-cache:metadata
+
+.PHONY: clean-config
+clean-config: #! Clean configuration files
+	$(GIT) clean -d -f -x config
+
+.PHONY: clean-config-cache
+clean-config-cache:
+	$(GIT) clean -d -f -x data/cache
+
+.PHONY: clean-protobuf
+clean-protobuf:
+	$(GIT) clean -d -f -x data/protobuf
+
+.PHONY: clean-translations
+clean-translations:
+	$(GIT) clean -d -f -x data/translations
+
+.PHONY: config
+config: #! Generate configuration files
+config: clean-config $(CONFIG) clean-config-cache
+
+# Create config/autoload/%.php
+# from   config/autoload/dist/%.php-ENV
+$(CONFIG_DIR)/%: $(CONFIG_DIST_DIR)/%.dist-$(APPLICATION_ENV)
+	@echo "Generating '$@' from '$<'"
+	@sed 's/@\([^@]*\)@/$$\{\1\}/g' $< | $(CONFIG_VARS) envsubst > $@
+
+# Create config/autoload/%.php-SITE
+# from   config/autoload/dist/%.php-SITE-ENV
+define CONFIG_GEN_SITE
+$(CONFIG_DIR)/%-$(SITE): $(CONFIG_DIST_DIR)/%.dist-$(SITE)-$(APPLICATION_ENV)
+	@echo "Generating '$$@' from '$$<'"
+	@sed 's/@\([^@]*\)@/$$$$\{\1\}/g' $$< | $(CONFIG_VARS) envsubst > $$@
+endef
+$(foreach SITE,$(SITES),$(eval $(CONFIG_GEN_SITE)))
+
+.PHONY: db-migrate
+db-migrate: #! Run database migrations
+db-migrate: config vendor
+	$(ZF) migrations:migrate --no-interaction
+	$(TOOLS)/rollbackDatabase
+
+.PHONY: dkr-logs
+dkr-logs: #! Show Docker logs
+	@$(DKR) logs
+
+.PHONY: dkr-rm
+dkr-rm: #! Remove the Docker container and image
+	@$(DKR) rm
+
+.PHONY: dkr-sh
+dkr-sh: #! Start a Docker shell
+	@$(DKR) bash
+
+.PHONY: dkr-start
+dkr-start: #! Start the Docker container
+	@$(DKR) start
+
+.PHONY: dkr-stop
+dkr-stop: #! Stop the Docker container
+	@$(DKR) stop
+
+.PHONY: fix-phpcs
+fix-phpcs: #! Run PHP coding standards fixer
+fix-phpcs: config vendor
+	$(BIN)/php-cs-fixer $(PHPCS_FIX_ARGS)
+	$(BIN)/php-cs-fixer $(PHPCS_FIX_TYPES_ARGS)
+
+.PHONY: help
+help: #! Show this help message
+	@echo 'Usage: make [OPTIONS] [TARGET]'
+	@echo ''
+	@echo 'Targets:'
+	@sed -n 's/\(^.*:\).*#!\( .*\$\)/  \1\2/p' $(MAKEFILE_LIST) | column -t -s ':'
+
+.PHONY: node_modules
+node_modules:
+	$(YARN) install
+
+.PHONY: permissions
+permissions:
+	chmod 777 data
+	chmod 777 data/blueprints
+	chmod 777 data/cache
+	chmod 777 data/translations
+	find config data module public -iname '*.php' -exec chmod 644 {} \;
+	find config data module public -iname '*.phtml' -exec chmod 644 {} \;
+
+.PHONY: proxies
+proxies: #! Generate Doctrine proxies
+proxies: vendor
+	$(BIN)/doctrine orm:generate-proxies
+	chmod 777 data/DoctrineORMModule/Proxy
+
+.PHONY: protobuf
+protobuf: #! Generate Protocol Buffers
+protobuf: clean-protobuf
+	protoc --proto_path=module/Ui/src/View/Model/ --php_out=data/protobuf --js_out=import_style=commonjs,binary:./data/protobuf module/Ui/src/View/Model/*.proto
+	chmod 777 data/protobuf
+	$(COMPOSER) dump-autoload
+
+.PHONY: test
+test: #! Run most tests
+test: test-phpcs test-phpstan test-phpunit test-eslint test-jest
+
+.PHONY: test-all
+test-all: #! Run all tests
+test-all: test test-phpunit-coverage test-phpmetrics
+
+.PHONY: test-eslint
+test-eslint: #! Run JavaScript lint check
+test-eslint: node_modules
+	$(YARN) lint
+
+.PHONY: test-jest
+test-jest: #! Run JavaScript unit tests
+test-jest: protobuf node_modules
+	$(YARN) test:prod
+
+.PHONY: test-phpcs
+test-phpcs: #! Run PHP coding standards check
+test-phpcs: config vendor
+	@mkdir -p $(BUILD)/test-results/phpcs
+	@$(BIN)/php-cs-fixer $(PHPCS_FIX_ARGS) --dry-run --format=junit --diff-format=udiff \
+		> $(BUILD)/test-results/phpcs/results.xml 2> /dev/null \
+		|| true
+	@mkdir -p $(BUILD)/test-results/phpcs-strict-types
+	@$(BIN)/php-cs-fixer $(PHPCS_FIX_TYPES_ARGS) --dry-run --format=junit --diff-format=udiff \
+		> $(BUILD)/test-results/phpcs-strict-types/results.xml 2> /dev/null \
+		|| true
+
+	$(BIN)/php-cs-fixer $(PHPCS_FIX_ARGS) --dry-run --diff --diff-format=udiff
+	$(BIN)/php-cs-fixer $(PHPCS_FIX_TYPES_ARGS) --dry-run --diff --diff-format=udiff
+
+.PHONY: test-phpmetrics
+test-phpmetrics: #! Generate a PHP metrics report
+test-phpmetrics: vendor test-phpunit
+	$(BIN)/phpmetrics \
+		--exclude=config,test \
+		--git \
+		--junit=$(BUILD)/test-results/phpunit/results.xml \
+		--report-html=$(BUILD)/phpmetrics \
+		module
+
+.PHONY: ecr-login
+ecr-login: #! Login to ECR
+ecr-login:
+	aws ecr get-login-password \
+		--region us-east-2 \
+		| docker login --username AWS --password-stdin \
+		046470573167.dkr.ecr.us-east-2.amazonaws.com
+
+.PHONY: vendor
+vendor: protobuf
+	$(COMPOSER) install $(COMPOSER_ARGS)
+	$(COMPOSER) $(COMPOSER_DEV_MODE)

@@ -1,5 +1,5 @@
-api/vendor/
-api/public/vendor/
-api/config/development.config.php
-api/config/autoload/local.php
-api/config/autoload/*.local.php
+./vendor/
+./public/vendor/
+./config/development.config.php
+./config/autoload/local.php
+./config/autoload/*.local.php

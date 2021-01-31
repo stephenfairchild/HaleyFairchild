@@ -1,0 +1,30 @@
+{
+    "family": "haleyfairchild",
+    "networkMode": "bridge",
+    "containerDefinitions": [
+        {
+            "name": "haleyfairchild",
+            "image": "046470573167.dkr.ecr.us-east-2.amazonaws.com/haleyfairchild.com:latest",
+            "cpu": 450,
+            "memory": 600,
+            "memoryReservation": 20,
+            "portMappings": [
+                {
+                    "containerPort": 80,
+                    "hostPort": 80
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "MYSQL_DATABASE",
+                    "value": "haleyfairchild_main"
+                },
+                {
+                    "name": "APPLICATION_ENV",
+                    "value": "production"
+                }
+            ]
+        }
+    ]
+}
