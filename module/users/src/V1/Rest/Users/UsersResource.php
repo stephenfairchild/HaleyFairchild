@@ -47,7 +47,7 @@ class UsersResource extends AbstractResourceListener
      */
     public function fetch($id)
     {
-        return new UsersEntity(["id" => $id, "testing"=> 'abcde']);
+        return new UsersEntity(["id" => $id, "testing"=> 'abcdef']);
         return new ApiProblem(405, 'The GET method has not been defined for individual resources');
     }
 
