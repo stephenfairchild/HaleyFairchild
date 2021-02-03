@@ -1,0 +1,35 @@
+name: Build and deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: [self-hosted, linux, non-gpu]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: "us-east-2"
+        #aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+        #aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and test image
+      id: build-and-test-image
+      env:
+        TEST: "foobar"
+        #MYSQL_USERNAME: ${{ secrets.MYSQL_USERNAME }}
+        #MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        #SSH_PRIVATE_KEY: ${{secrets.GH_DEPLOY_KEY}}
+      run: |
+       ./bin/deploy.sh

@@ -22,7 +22,7 @@ case ${1} in
         ;;
 
     sh)
-        _docker exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -it --detach-keys 'ctrl-q,q' $(_compose ps | grep _app_ | awk '{ print $1 }') sh
+        _docker exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -it --detach-keys 'ctrl-q,q' $(_docker ps | grep haleyfairchild | awk '{ print $1 }') sh
         ;;
 esac
 

@@ -1,6 +1,12 @@
 {
     "family": "haleyfairchild",
     "networkMode": "bridge",
+    "volumes": [
+        {
+            "name": "app",
+            "host": {}
+        }
+    ],
     "containerDefinitions": [
         {
             "name": "haleyfairchild",
@@ -10,8 +16,14 @@
             "memoryReservation": 20,
             "portMappings": [
                 {
-                    "containerPort": 80,
+                    "containerPort": 8080,
                     "hostPort": 80
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "app",
+                    "containerPath": "/var/www/html"
                 }
             ],
             "essential": true,
