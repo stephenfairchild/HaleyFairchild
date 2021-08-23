@@ -12,7 +12,7 @@
 const knex = require("knex")({
     client: "mysql",
     connection: {
-        host: "svs-beta.cy7ws0gobkpf.us-east-2.rds.amazonaws.com",
+        host: "fairchild-primary-prod.cy7ws0gobkpf.us-east-2.rds.amazonaws.com",
         user: "admin",
         password: "KNy75v4nLQNq",
         database: "haleyfairchild",
