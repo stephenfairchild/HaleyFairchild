@@ -1,24 +1,4 @@
-//const knex = require("knex")({
-//    client: "mysql",
-//    connection: {
-//        host: process.env.mysql_host,
-//        user: process.env.mysql_username,
-//        password: process.env.mysql_password,
-//        database: "haleyfairchild",
-//        port: 3306,
-//    },
-//});
-
-const knex = require("knex")({
-    client: "mysql",
-    connection: {
-        host: "fairchild-primary-prod.cy7ws0gobkpf.us-east-2.rds.amazonaws.com",
-        user: "admin",
-        password: "KNy75v4nLQNq",
-        database: "haleyfairchild",
-        port: 3306,
-    },
-});
+import knex from "../../knex";
 
 export default async (req, res) => {
     try {
