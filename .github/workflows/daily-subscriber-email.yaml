@@ -1,4 +1,4 @@
-name: 15-minute-cron
+name: Daily newsletter subscriber list
 on:
   schedule:
     - cron: '*/15 * * * *'
@@ -6,8 +6,8 @@ jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
-      - name: Sent updated list of newsletter subscribers
+      - name: Send updated list of newsletter subscribers
         run: |
           curl --request POST \
-          --url 'https://haleyfairchild.com/api/subscribers' \
+          --url 'https://www.haleyfairchild.com/api/subscribers' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
