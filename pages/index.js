@@ -5,7 +5,6 @@ import Notification from "components/notification";
 import Link from "next/link";
 
 const hardcoreMode = false;
-const artLive = false;
 
 export default function Index() {
     const [showNotification, setShowNotification] = useState(false);
@@ -51,16 +50,14 @@ export default function Index() {
                             </p>
 
                             <div className="mx-auto mt-3 sm:flex sm:justify-center lg:justify-start">
-                                {artLive && (
-                                    <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-                                        <a
-                                            className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
-                                            href="/art"
-                                        >
-                                            View art gallery
-                                        </a>
-                                    </div>
-                                )}
+                                <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                                    <a
+                                        className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                                        href="https://store.haleyfairchild.com"
+                                    >
+                                        View art gallery
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
