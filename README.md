@@ -8,4 +8,4 @@ For the stack I use:
  - SendGrid
  - Tailwind
 
-It's deployed to Vercel.
+It's deployed with Vercel.
