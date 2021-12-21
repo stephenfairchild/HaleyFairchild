@@ -45,8 +45,8 @@ export default function Index() {
                             <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                                 Haley is traveling through life with her family,
                                 practicing mindfulness, baking and making art.
-                                Haley is a certified RYT-200 yoga instructor and
-                                receives her RYT-300 certification in May 2021.
+                                Haley has received both her RYT-200 and RYT-300
+                                certificates.
                             </p>
 
                             <div className="mx-auto mt-3 sm:flex sm:justify-center lg:justify-start">
