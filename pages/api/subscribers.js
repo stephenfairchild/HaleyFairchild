@@ -19,7 +19,7 @@ export default async (req, res) => {
                     ""
                 )}</ul>`;
 
-                sendMail({
+                await sendMail({
                     to: "stephenfairchilddev@gmail.com",
                     from: "noreply@haleyfairchild.com",
                     subject: `Newsletter Update: ${subscribers.length} total newsletter subscribers`,
