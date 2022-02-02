@@ -1,7 +1,8 @@
 name: Daily newsletter subscriber list
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Every week Mon-Sat at 6PM.
+    - cron: '0 18 * * 0-6'
 jobs:
   cron:
     runs-on: ubuntu-latest

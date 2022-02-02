@@ -11,26 +11,21 @@ export default async (req, res) => {
                     `SELECT email, channel,created_at FROM newsletter`
                 );
 
-                const items = [];
-                subscribers.forEach((subscriber) => {
-                    const { email } = subscriber;
-                    const item = `<li> ${email}`;
-                    items.push(item);
+                const items = subscribers.map(({ email }) => {
+                    return `<li>${email}</li>`;
                 });
 
                 const html = `<h3>haleyfairchild.com Subscriber list</h3><ul>${items.join(
                     ""
                 )}</ul>`;
 
-                const msg = {
+                sendMail({
                     to: "stephenfairchilddev@gmail.com",
                     from: "noreply@haleyfairchild.com",
                     subject: `Newsletter Update: ${subscribers.length} total newsletter subscribers`,
                     text: `haleyfairchild.com Subscribers Count: ${subscribers.length}`,
                     html,
-                };
-
-                sendMail(msg);
+                });
 
                 return res.status(200).json({ success: true, subscribers });
             } else {
